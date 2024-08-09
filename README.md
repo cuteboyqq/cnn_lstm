@@ -1,7 +1,18 @@
 # CNN LSTM 
 Implementation of CNN LSTM with Resnet backend for image sequence Classification
 
+# Getting Started
+## Prerequisites
+* PyTorch (ver. 0.4+ required)
+* FFmpeg, FFprobe
+* Python 3
 
+
+### Try on your own dataset 
+
+```
+mkdir data
+mkdir data/video_data
 Put your image sequences dataset inside data/image_data
 It should be in this form -->
 ```
