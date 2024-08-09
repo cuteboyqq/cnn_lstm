@@ -10,7 +10,7 @@ Implementation of CNN LSTM with Resnet backend for image sequence Classification
 
 ```
 mkdir data
-mkdir data/video_data
+mkdir data/image_data
 ```
 Put your image sequences dataset inside data/image_data
 It should be in this form -->
