@@ -19,3 +19,8 @@ It should be in this form --
                           ...
                         - frame_N.jpg
 ```
+## Train
+Once you have created the dataset, start training ->
+```
+python cnn-lstm.py 
+```
