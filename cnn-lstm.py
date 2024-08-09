@@ -125,7 +125,7 @@ def main():
     dataset_dir = 'data/image_data/'
     num_classes = 5
     batch_size = 8
-    sequence_length = 25
+    sequence_length = 35
     img_height = 224
     img_width = 224
     model_dir = 'models'  # Directory to save model checkpoints
@@ -164,6 +164,9 @@ def main():
     # Initialize the scheduler
     scheduler = StepLR(optimizer, step_size=10, gamma=0.7)
     
+    # Track the best validation accuracy
+    best_val_accuracy = 0.0
+    
     # Training and validation loop
     num_epochs = 100
     for epoch in range(num_epochs):
@@ -201,15 +204,15 @@ def main():
         val_accuracy = 100 * correct_predictions / total_samples
         print(f'Validation Loss: {avg_val_loss:.4f}, Accuracy: {val_accuracy:.2f}%')
 
+        # Save model checkpoint if it has better or equal accuracy
+        if val_accuracy >= best_val_accuracy:
+            best_val_accuracy = val_accuracy
+            checkpoint_path = os.path.join(model_dir, f'model_best.pt')
+            torch.save(model.state_dict(), checkpoint_path)
+            print(f'Saved new best model checkpoint: {checkpoint_path}')
+
         # Step the scheduler
         scheduler.step()
-        
-        # Save model checkpoint every 10 epochs
-        if (epoch + 1) % 10 == 0:
-            checkpoint_path = os.path.join(model_dir, f'model_{epoch+1}.pt')
-            torch.save(model.state_dict(), checkpoint_path)
-            print(f'Saved checkpoint: {checkpoint_path}')
-
 
 
 if __name__ == '__main__':
