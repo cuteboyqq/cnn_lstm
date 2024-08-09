@@ -86,8 +86,9 @@ class CNNLSTM(nn.Module):
         super(CNNLSTM, self).__init__()
         self.resnet = models.resnet18(pretrained=True)
         self.resnet.fc = nn.Identity()  # Remove the original classifier
-        self.lstm = nn.LSTM(input_size=512, hidden_size=128, num_layers=2, batch_first=True)
+        self.lstm = nn.LSTM(input_size=512, hidden_size=128, num_layers=2, batch_first=True, dropout=0.5)
         self.fc = nn.Linear(128, num_classes)
+        self.dropout = nn.Dropout(0.5)
 
     def forward(self, x):
         batch_size, seq_len, c, h, w = x.size()
@@ -100,6 +101,9 @@ class CNNLSTM(nn.Module):
         
         # Use the output from the last time step
         last_hidden = lstm_out[:, -1, :]
+        
+        # Apply dropout
+        last_hidden = self.dropout(last_hidden)
         
         # Classify
         out = self.fc(last_hidden)
@@ -120,16 +124,75 @@ def compute_mean_std(dataloader):
     std /= num_batches
     return mean, std
 
+
+# def early_stopping(patience, min_delta=0.0):
+#     best_val_loss = np.Inf
+#     counter = 0
+#     for epoch in range(num_epochs):
+#         model.train()
+#         running_loss = 0.0
+#         for sequences, target_labels in train_loader:
+#             sequences, target_labels = sequences.to(device), target_labels.to(device)
+#             optimizer.zero_grad()
+#             outputs = model(sequences)
+#             loss = criterion(outputs, target_labels)
+#             loss.backward()
+#             optimizer.step()
+#             running_loss += loss.item() * sequences.size(0)
+
+#         epoch_loss = running_loss / len(train_dataset)
+#         print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {epoch_loss:.4f}')
+
+#         # Validation
+#         model.eval()
+#         val_loss = 0.0
+#         correct_predictions = 0
+#         total_samples = 0
+#         with torch.no_grad():
+#             for sequences, target_labels in val_loader:
+#                 sequences, target_labels = sequences.to(device), target_labels.to(device)
+#                 outputs = model(sequences)
+#                 loss = criterion(outputs, target_labels)
+#                 val_loss += loss.item() * sequences.size(0)
+
+#                 _, predicted = torch.max(outputs, 1)
+#                 correct_predictions += (predicted == target_labels).sum().item()
+#                 total_samples += target_labels.size(0)
+        
+#         avg_val_loss = val_loss / len(val_dataset)
+#         val_accuracy = 100 * correct_predictions / total_samples
+#         print(f'Validation Loss: {avg_val_loss:.4f}, Accuracy: {val_accuracy:.2f}%')
+
+#         # Early stopping check
+#         if avg_val_loss < best_val_loss - min_delta:
+#             best_val_loss = avg_val_loss
+#             counter = 0
+#             checkpoint_path = os.path.join(model_dir, f'model_best.pt')
+#             torch.save(model.state_dict(), checkpoint_path)
+#             print(f'Saved new best model checkpoint: {checkpoint_path}')
+#         else:
+#             counter += 1
+#             if counter >= patience:
+#                 print("Early stopping triggered")
+#                 break
+
+#         # Step the scheduler
+#         scheduler.step()
+
+
 def main():
     # Parameters
     dataset_dir = 'data/image_data/'
     num_classes = 5
     batch_size = 8
-    sequence_length = 35
+    sequence_length = 24
     img_height = 224
     img_width = 224
     model_dir = 'models'  # Directory to save model checkpoints
     val_split = 0.2  # Fraction of data to use for validation
+    num_epochs = 100
+    patience = 30
+    min_delta = 0
 
     # Create model directory if it doesn't exist
     if not os.path.exists(model_dir):
@@ -159,16 +222,16 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = CNNLSTM(num_classes=num_classes).to(device)
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
-    
+    # In your optimizer setup:
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-4)  # Adding weight decay
     # Initialize the scheduler
     scheduler = StepLR(optimizer, step_size=10, gamma=0.7)
     
     # Track the best validation accuracy
     best_val_accuracy = 0.0
     
-    # Training and validation loop
-    num_epochs = 100
+    best_val_loss = np.Inf
+    counter = 0
     for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
@@ -204,16 +267,18 @@ def main():
         val_accuracy = 100 * correct_predictions / total_samples
         print(f'Validation Loss: {avg_val_loss:.4f}, Accuracy: {val_accuracy:.2f}%')
 
-        # Save model checkpoint if it has better or equal accuracy
-        if val_accuracy >= best_val_accuracy:
-            best_val_accuracy = val_accuracy
+        # Early stopping check
+        if avg_val_loss < best_val_loss - min_delta:
+            best_val_loss = avg_val_loss
+            counter = 0
             checkpoint_path = os.path.join(model_dir, f'model_best.pt')
             torch.save(model.state_dict(), checkpoint_path)
             print(f'Saved new best model checkpoint: {checkpoint_path}')
-
-        # Step the scheduler
-        scheduler.step()
-
+        else:
+            counter += 1
+            if counter >= patience:
+                print("Early stopping triggered")
+                break
 
 if __name__ == '__main__':
     main()
