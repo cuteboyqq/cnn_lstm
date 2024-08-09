@@ -37,11 +37,15 @@ def main():
     dataset_dir = 'data/image_data/'
     num_classes = 5
     batch_size = 8
-    sequence_length = 35
+    sequence_length = 24
     img_height = 224
     img_width = 224
     model_dir = 'models'  # Directory to save model checkpoints
     val_split = 0.2  # Fraction of data to use for validation
+    num_epochs = 100
+    patience = 30
+    min_delta = 0
+
 ```
 ## Train
 Once you have created the dataset, start training ->
