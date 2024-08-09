@@ -124,62 +124,6 @@ def compute_mean_std(dataloader):
     std /= num_batches
     return mean, std
 
-
-# def early_stopping(patience, min_delta=0.0):
-#     best_val_loss = np.Inf
-#     counter = 0
-#     for epoch in range(num_epochs):
-#         model.train()
-#         running_loss = 0.0
-#         for sequences, target_labels in train_loader:
-#             sequences, target_labels = sequences.to(device), target_labels.to(device)
-#             optimizer.zero_grad()
-#             outputs = model(sequences)
-#             loss = criterion(outputs, target_labels)
-#             loss.backward()
-#             optimizer.step()
-#             running_loss += loss.item() * sequences.size(0)
-
-#         epoch_loss = running_loss / len(train_dataset)
-#         print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {epoch_loss:.4f}')
-
-#         # Validation
-#         model.eval()
-#         val_loss = 0.0
-#         correct_predictions = 0
-#         total_samples = 0
-#         with torch.no_grad():
-#             for sequences, target_labels in val_loader:
-#                 sequences, target_labels = sequences.to(device), target_labels.to(device)
-#                 outputs = model(sequences)
-#                 loss = criterion(outputs, target_labels)
-#                 val_loss += loss.item() * sequences.size(0)
-
-#                 _, predicted = torch.max(outputs, 1)
-#                 correct_predictions += (predicted == target_labels).sum().item()
-#                 total_samples += target_labels.size(0)
-        
-#         avg_val_loss = val_loss / len(val_dataset)
-#         val_accuracy = 100 * correct_predictions / total_samples
-#         print(f'Validation Loss: {avg_val_loss:.4f}, Accuracy: {val_accuracy:.2f}%')
-
-#         # Early stopping check
-#         if avg_val_loss < best_val_loss - min_delta:
-#             best_val_loss = avg_val_loss
-#             counter = 0
-#             checkpoint_path = os.path.join(model_dir, f'model_best.pt')
-#             torch.save(model.state_dict(), checkpoint_path)
-#             print(f'Saved new best model checkpoint: {checkpoint_path}')
-#         else:
-#             counter += 1
-#             if counter >= patience:
-#                 print("Early stopping triggered")
-#                 break
-
-#         # Step the scheduler
-#         scheduler.step()
-
-
 def main():
     # Parameters
     dataset_dir = 'data/image_data/'
