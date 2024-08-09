@@ -30,7 +30,7 @@ It should be in this form -->
                         - frame_N.jpg
 ```
 
-Set parameters in code cnn-lstm.py 
+Set parameters in code cnn-lstm.py -->
 ```
 def main():
     # Parameters
