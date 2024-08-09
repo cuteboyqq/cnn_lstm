@@ -3,7 +3,7 @@ Implementation of CNN LSTM with Resnet backend for image sequence Classification
 
 
 Put your image sequences dataset inside data/image_data
-It should be in this form --
+It should be in this form -->
 ```
 + data 
     + image_data    
