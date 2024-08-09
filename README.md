@@ -29,6 +29,20 @@ It should be in this form -->
                           ...
                         - frame_N.jpg
 ```
+
+Set parameters in code cnn-lstm.py 
+```
+def main():
+    # Parameters
+    dataset_dir = 'data/image_data/'
+    num_classes = 5
+    batch_size = 8
+    sequence_length = 35
+    img_height = 224
+    img_width = 224
+    model_dir = 'models'  # Directory to save model checkpoints
+    val_split = 0.2  # Fraction of data to use for validation
+```
 ## Train
 Once you have created the dataset, start training ->
 ```
