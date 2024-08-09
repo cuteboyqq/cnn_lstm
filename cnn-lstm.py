@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torchvision.models as models
 import torchvision.transforms as transforms
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, Dataset, random_split
 from PIL import Image
 import numpy as np
 import os
@@ -120,7 +120,6 @@ def compute_mean_std(dataloader):
     std /= num_batches
     return mean, std
 
-# Example usage
 def main():
     # Parameters
     dataset_dir = 'data/image_data/'
@@ -129,6 +128,12 @@ def main():
     sequence_length = 25
     img_height = 224
     img_width = 224
+    model_dir = 'models'  # Directory to save model checkpoints
+    val_split = 0.2  # Fraction of data to use for validation
+
+    # Create model directory if it doesn't exist
+    if not os.path.exists(model_dir):
+        os.makedirs(model_dir)
 
     # Define transformations
     transform = transforms.Compose([
@@ -139,7 +144,16 @@ def main():
 
     # Create dataset and dataloader
     dataset = ImageSequenceDataset(root_dir=dataset_dir, transform=transform, sequence_length=sequence_length)
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+    
+    # Split dataset into train and validation sets
+    num_samples = len(dataset)
+    num_val_samples = int(num_samples * val_split)
+    num_train_samples = num_samples - num_val_samples
+    
+    train_dataset, val_dataset = random_split(dataset, [num_train_samples, num_val_samples])
+    
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
 
     # Create model
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -150,12 +164,12 @@ def main():
     # Initialize the scheduler
     scheduler = StepLR(optimizer, step_size=10, gamma=0.7)
     
-    # Training loop
+    # Training and validation loop
     num_epochs = 100
     for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
-        for sequences, target_labels in dataloader:
+        for sequences, target_labels in train_loader:
             sequences, target_labels = sequences.to(device), target_labels.to(device)
             optimizer.zero_grad()
             outputs = model(sequences)
@@ -164,13 +178,39 @@ def main():
             optimizer.step()
             running_loss += loss.item() * sequences.size(0)
 
-        epoch_loss = running_loss / len(dataset)
+        epoch_loss = running_loss / len(train_dataset)
         print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {epoch_loss:.4f}')
+
+        # Validation
+        model.eval()
+        val_loss = 0.0
+        correct_predictions = 0
+        total_samples = 0
+        with torch.no_grad():
+            for sequences, target_labels in val_loader:
+                sequences, target_labels = sequences.to(device), target_labels.to(device)
+                outputs = model(sequences)
+                loss = criterion(outputs, target_labels)
+                val_loss += loss.item() * sequences.size(0)
+
+                _, predicted = torch.max(outputs, 1)
+                correct_predictions += (predicted == target_labels).sum().item()
+                total_samples += target_labels.size(0)
+        
+        avg_val_loss = val_loss / len(val_dataset)
+        val_accuracy = 100 * correct_predictions / total_samples
+        print(f'Validation Loss: {avg_val_loss:.4f}, Accuracy: {val_accuracy:.2f}%')
 
         # Step the scheduler
         scheduler.step()
-
         
+        # Save model checkpoint every 10 epochs
+        if (epoch + 1) % 10 == 0:
+            checkpoint_path = os.path.join(model_dir, f'model_{epoch+1}.pt')
+            torch.save(model.state_dict(), checkpoint_path)
+            print(f'Saved checkpoint: {checkpoint_path}')
+
+
 
 if __name__ == '__main__':
     main()
