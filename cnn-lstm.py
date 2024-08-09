@@ -76,31 +76,7 @@ class ImageSequenceDataset(Dataset):
                 print(f"Error loading image {img_path}: {e}")
 
         return torch.stack(images), label
-
-
-    # def __getitem__(self, idx):
-    #     (seq_path, img_files),labels = self.data[idx]
-
-    #     # Check the type of img_files
-    #     if not isinstance(img_files, list):
-    #         raise TypeError(f"Expected list for img_files, got {type(img_files)}")
-
-    #     # Randomly select a starting index for the sequence
-    #     start_index = random.randint(0, len(img_files) - self.sequence_length)
-    #     sequence_files = img_files[start_index:start_index + self.sequence_length]
-
-    #     images = []
-    #     for img_name in sequence_files:
-    #         img_path = os.path.join(seq_path, img_name)
-    #         try:
-    #             img = Image.open(img_path).convert('RGB')
-    #             if self.transform:
-    #                 img = self.transform(img)
-    #             images.append(img)
-    #         except Exception as e:
-    #             print(f"Error loading image {img_path}: {e}")
-
-    #     return torch.stack(images), self.data[idx][1]
+        # return torch.stack(images), self.data[idx][1]
 
 
 
